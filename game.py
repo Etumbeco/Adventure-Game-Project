@@ -9,36 +9,38 @@ import gamefunctions
 
 def main():
     """Run the adventure game."""
-    name = input("What is your name, adventurer? ")
+    character_health = 30
+    character_gold = 10
 
-    print(f"\nWelcome, {name}!")
     gamefunctions.print_welcome()
-    gamefunctions.print_shop_menu()
 
-    choice = input("\nWould you like to purchase an item? (yes/no): ")
+    while character_health > 0:
+        gamefunctions.print_shop_menu(
+            character_health, character_gold
+        )
 
-    if choice.lower() == "yes":
-        gamefunctions.purchase_item()
-    else:
-        print("You decided not to buy anything.")
+        choice = input("Enter your choice: ").strip()
 
-    gamefunctions.random_monster()
-    print(f"\nThank you for playing, {name}!")
+        if choice == "1":
+            character_health, character_gold = (
+                gamefunctions.fight_monster(
+                    character_health, character_gold
+                )
+            )
+        elif choice == "2":
+            character_health, character_gold = (
+                gamefunctions.sleep(
+                    character_health, character_gold
+                )
+            )
+        elif choice == "3":
+            print("Thanks for playing!")
+            break
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+
+    print("Game ended.")
 
 
-if __name__ == "__main__": def print_welcome():
-    """Display the welcome message."""
-    print("Welcome to the Adventure Game!")
-
-
-def print_shop_menu():
-    """Display the shop menu."""
-    print("\n--- Shop Menu ---")
-    print("1. Buy an item")
-    print("2. Return to the adventure")
-
-
-def random_monster():
-    """Select and return a random monster."""
-    return new_random_monster()
+if __name__ == "__main__":
     main()
