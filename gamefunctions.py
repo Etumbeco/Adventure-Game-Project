@@ -2,10 +2,12 @@
 Functions for the adventure game.
 
 This module manages the shop, inventory, combat,
-equipment, and player actions.
+equipment, saving, loading, and player actions.
 """
 
 import random
+import json
+import os
 
 
 def print_welcome():
@@ -24,7 +26,7 @@ def print_shop_menu(state):
     print("3. Visit Shop")
     print("4. View Inventory")
     print("5. Equip Weapon")
-    print("6. Quit")
+    print("6. Save and Quit")
 
 
 def random_monster():
@@ -260,6 +262,49 @@ def sleep(state):
         print("You rested and restored your health to 30 HP.")
 
 
+def save_game(state):
+    """Save the player's progress to a JSON file."""
+
+    save_data = state.copy()
+
+    if state["equipped_weapon"]:
+        save_data["equipped_weapon"] = (
+            state["equipped_weapon"]["name"]
+        )
+
+    with open("savegame.json", "w") as file:
+        json.dump(save_data, file, indent=4)
+
+    print("\nGame saved successfully!")
+
+
+def load_game():
+    """Load the player's progress from a JSON file."""
+
+    if not os.path.exists("savegame.json"):
+        print("\nNo saved game found.")
+        return None
+
+    try:
+        with open("savegame.json", "r") as file:
+            state = json.load(file)
+
+        weapon_name = state["equipped_weapon"]
+        state["equipped_weapon"] = None
+
+        for item in state["player_inventory"]:
+            if item["name"] == weapon_name:
+                state["equipped_weapon"] = item
+                break
+
+        print("\nGame loaded successfully!")
+        return state
+
+    except (json.JSONDecodeError, KeyError, TypeError):
+        print("\nThe save file is invalid.")
+        return None
+
+
 def main_menu_action(state):
     """Run the player's selected main menu action."""
     while True:
@@ -283,6 +328,7 @@ def main_menu_action(state):
             equip_weapon(state)
 
         elif choice == "6":
+            save_game(state)
             print("Thanks for playing!")
             break
 
