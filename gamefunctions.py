@@ -1,339 +1,182 @@
 """
-Functions for the adventure game.
+Adventure Game Functions
 
-This module manages the shop, inventory, combat,
-equipment, saving, loading, and player actions.
+Contains game functions, player movement,
+monster encounters, and the world map.
 """
 
 import random
-import json
-import os
 
 
 def print_welcome():
     """Display the welcome message."""
-    print("\nWelcome to the Adventure Game!")
+    print("Welcome to the Adventure Game!")
 
 
-def print_shop_menu(state):
-    """Display the main town menu."""
-    print("\n========== ADVENTURE GAME ==========")
-    print(f"Player: {state['player_name']}")
-    print(f"Health: {state['player_health']}")
-    print(f"Gold: {state['player_gold']}")
-    print("\n1. Fight Monster")
-    print("2. Sleep")
-    print("3. Visit Shop")
-    print("4. View Inventory")
-    print("5. Equip Weapon")
-    print("6. Save and Quit")
+def print_shop_menu(character_health, character_gold):
+    """Display the town menu."""
+    print("\nYou are in town.")
+    print(f"Current HP: {character_health}, "
+          f"Current Gold: {character_gold}")
+    print("What would you like to do?")
+    print("1) Explore the world map")
+    print("2) Sleep (Restore HP for 5 Gold)")
+    print("3) Quit")
 
 
 def random_monster():
-    """Choose a random monster."""
+    """Return a randomly selected monster."""
     monsters = [
-        {"name": "Goblin", "hp": 10, "damage": 3, "gold": 5},
-        {"name": "Vulture", "hp": 12, "damage": 4, "gold": 5},
-        {"name": "Orc", "hp": 20, "damage": 5, "gold": 8}
+        {"name": "Goblin", "health": 20, "attack": 5},
+        {"name": "Vulture", "health": 15, "attack": 4},
+        {"name": "Orc", "health": 30, "attack": 8}
     ]
 
-    return random.choice(monsters).copy()
+    return random.choice(monsters)
 
 
-def display_fight_statistics(state, monster):
-    """Display current fight statistics."""
-    print("\nYour HP:", state["player_health"])
-    print(monster["name"], "HP:", monster["hp"])
-
-
-def show_inventory(state):
-    """Display all items in the player's inventory."""
-    print("\n========== INVENTORY ==========")
-
-    if not state["player_inventory"]:
-        print("Your inventory is empty.")
-        return
-
-    for index, item in enumerate(state["player_inventory"], 1):
-        print(f"{index}. {item['name']} ({item['type']})")
-
-        if item["type"] == "weapon":
-            print(
-                f"   Durability: "
-                f"{item['currentDurability']}/"
-                f"{item['maxDurability']}"
-            )
-
-        if item.get("equipped", False):
-            print("   EQUIPPED")
-
-
-def visit_shop(state):
-    """Allow the player to purchase shop items."""
-    shop_items = [
-        {
-            "name": "sword",
-            "type": "weapon",
-            "price": 50,
-            "maxDurability": 10,
-            "currentDurability": 10,
-            "equipped": False
-        },
-        {
-            "name": "shield",
-            "type": "shield",
-            "price": 30,
-            "maxDurability": 10,
-            "currentDurability": 10,
-            "equipped": False
-        },
-        {
-            "name": "magic_bomb",
-            "type": "misc",
-            "price": 40,
-            "note": "Defeats one monster instantly."
-        }
-    ]
-
-    print("\n========== SHOP ==========")
-
-    for index, item in enumerate(shop_items, 1):
-        print(f"{index}. {item['name']} - {item['price']} gold")
-
-    print("4. Return")
-
-    choice = input("Choose an item to purchase: ").strip()
-
-    if choice == "4":
-        return
-
-    if choice not in ("1", "2", "3"):
-        print("Invalid choice.")
-        return
-
-    item = shop_items[int(choice) - 1]
-
-    if state["player_gold"] < item["price"]:
-        print("You do not have enough gold!")
-        return
-
-    state["player_gold"] -= item["price"]
-
-    purchased_item = item.copy()
-    purchased_item.pop("price")
-
-    state["player_inventory"].append(purchased_item)
-
-    print(f"You purchased {item['name']} successfully!")
-
-
-def equip_weapon(state):
-    """Allow the player to equip a weapon."""
-    weapons = [
-        item for item in state["player_inventory"]
-        if item["type"] == "weapon"
-        and item["currentDurability"] > 0
-    ]
-
-    print("\n========== EQUIP WEAPON ==========")
-
-    for index, weapon in enumerate(weapons, 1):
-        print(f"{index}. {weapon['name']}")
-
-    print("0. Unequip weapon")
-
-    if not weapons:
-        print("You have no usable weapons.")
-
-    choice = input("Choose a weapon: ").strip()
-
-    if choice == "0":
-        for item in state["player_inventory"]:
-            if item["type"] == "weapon":
-                item["equipped"] = False
-
-        state["equipped_weapon"] = None
-        print("You unequipped your weapon.")
-        return
-
-    if not choice.isdigit():
-        print("Invalid choice.")
-        return
-
-    number = int(choice)
-
-    if number < 1 or number > len(weapons):
-        print("Invalid choice.")
-        return
-
-    for item in state["player_inventory"]:
-        if item["type"] == "weapon":
-            item["equipped"] = False
-
-    selected = weapons[number - 1]
-    selected["equipped"] = True
-    state["equipped_weapon"] = selected
-
-    print(f"You equipped your {selected['name']}!")
-
-
-def fight_monster(state):
-    """Fight a monster using inventory items."""
+def fight_monster(character_health, character_gold):
+    """Fight a randomly selected monster."""
     monster = random_monster()
 
-    print(f"\nA {monster['name']} appeared!")
+    print(f"\nA {monster['name']} appears!")
 
-    while state["player_health"] > 0 and monster["hp"] > 0:
+    while character_health > 0 and monster["health"] > 0:
+        monster["health"] -= 10
+        print("You attack the monster!")
 
-        display_fight_statistics(state, monster)
+        if monster["health"] <= 0:
+            break
 
-        bombs = [
-            item for item in state["player_inventory"]
-            if item["name"] == "magic_bomb"
-        ]
+        character_health -= monster["attack"]
+        print(f"The monster attacks! HP: {character_health}")
 
-        if bombs:
-            choice = input(
-                "Use magic bomb to defeat the monster? (y/n): "
-            ).strip().lower()
+    if character_health > 0:
+        print("You defeated the monster!")
+        character_gold += 10
+    else:
+        print("You were defeated!")
 
-            if choice == "y":
-                state["player_inventory"].remove(bombs[0])
-                monster["hp"] = 0
-                print("Your magic bomb defeated the monster instantly!")
-                break
-
-        action = input("1. Fight\n2. Run away\nChoose: ").strip()
-
-        if action == "1":
-            damage = random.randint(4, 8)
-
-            weapon = state["equipped_weapon"]
-
-            if weapon and weapon["currentDurability"] > 0:
-                damage += 5
-                weapon["currentDurability"] -= 1
-
-                print("Your sword increases your damage!")
-
-                if weapon["currentDurability"] == 0:
-                    weapon["equipped"] = False
-                    state["equipped_weapon"] = None
-                    print("Your sword broke!")
-
-            monster["hp"] -= damage
-            print(f"You dealt {damage} damage!")
-
-            if monster["hp"] > 0:
-                state["player_health"] -= monster["damage"]
-                print(
-                    f"The {monster['name']} dealt "
-                    f"{monster['damage']} damage!"
-                )
-
-        elif action == "2":
-            print("You ran away!")
-            return
-
-        else:
-            print("Invalid choice.")
-
-    if state["player_health"] <= 0:
-        state["player_health"] = 0
-        print("You passed out! Game over.")
-
-    elif monster["hp"] <= 0:
-        print(f"You defeated the {monster['name']}!")
-        state["player_gold"] += monster["gold"]
-        print(f"You earned {monster['gold']} gold!")
+    return character_health, character_gold
 
 
-def sleep(state):
+def sleep(character_health, character_gold):
     """Restore player health for five gold."""
-    if state["player_gold"] < 5:
-        print("You need at least 5 gold to sleep.")
+    if character_gold >= 5:
+        character_gold -= 5
+        character_health = 30
+        print("You rested and restored your health!")
+    else:
+        print("You don't have enough gold!")
 
-    elif state["player_health"] == 30:
-        print("Your health is already full!")
+    return character_health, character_gold
+
+
+def create_map():
+    """Create the initial 10x10 world map."""
+    return {
+        "player": (5, 9),
+        "town": (5, 9),
+        "monster": (5, 3),
+        "left_town": False
+    }
+
+
+def display_map(map_state):
+    """Display the world map using its current state."""
+    print("\n========== WORLD MAP ==========")
+
+    for y in range(10):
+        row = []
+
+        for x in range(10):
+            position = (x, y)
+
+            if position == map_state["player"]:
+                row.append("P")
+            elif position == map_state["town"]:
+                row.append("T")
+            elif position == map_state["monster"]:
+                row.append("M")
+            else:
+                row.append(".")
+
+        print(" ".join(row))
+
+    print("\nP = Player")
+    print("T = Town")
+    print("M = Monster")
+    print(". = Empty space")
+
+
+def move_player(game_state, direction):
+    """Move the player one space on the map."""
+    x, y = game_state["player"]
+
+    direction = direction.lower()
+
+    if direction in ("up", "w"):
+        y -= 1
+    elif direction in ("down", "s"):
+        y += 1
+    elif direction in ("left", "a"):
+        x -= 1
+    elif direction in ("right", "d"):
+        x += 1
+    else:
+        return "moved"
+
+    # Check map boundaries.
+    if not (0 <= x <= 9 and 0 <= y <= 9):
+        print("You cannot move outside the map!")
+        return "moved"
+
+    game_state["player"] = (x, y)
+
+    # Check if player returns to town.
+    if game_state["player"] == game_state["town"]:
+        if game_state["left_town"]:
+            return "returned_to_town"
 
     else:
-        state["player_gold"] -= 5
-        state["player_health"] = 30
-        print("You rested and restored your health to 30 HP.")
+        game_state["left_town"] = True
+
+    # Check monster location.
+    if game_state["player"] == game_state["monster"]:
+        return "monster_encounter"
+
+    return "moved"
 
 
-def save_game(state):
-    """Save the player's progress to a JSON file."""
+def map_interface(map_state):
+    """Run the text-based world map."""
+    while True:
+        display_map(map_state)
 
-    save_data = state.copy()
-
-    if state["equipped_weapon"]:
-        save_data["equipped_weapon"] = (
-            state["equipped_weapon"]["name"]
+        direction = input(
+            "\nMove using W/A/S/D: "
         )
 
-    with open("savegame.json", "w") as file:
-        json.dump(save_data, file, indent=4)
+        result = move_player(map_state, direction)
 
-    print("\nGame saved successfully!")
+        if result == "returned_to_town":
+            print("You returned to town!")
+            return "town"
 
-
-def load_game():
-    """Load the player's progress from a JSON file."""
-
-    if not os.path.exists("savegame.json"):
-        print("\nNo saved game found.")
-        return None
-
-    try:
-        with open("savegame.json", "r") as file:
-            state = json.load(file)
-
-        weapon_name = state["equipped_weapon"]
-        state["equipped_weapon"] = None
-
-        for item in state["player_inventory"]:
-            if item["name"] == weapon_name:
-                state["equipped_weapon"] = item
-                break
-
-        print("\nGame loaded successfully!")
-        return state
-
-    except (json.JSONDecodeError, KeyError, TypeError):
-        print("\nThe save file is invalid.")
-        return None
+        elif result == "monster_encounter":
+            print("A monster appeared!")
+            return "monster"
 
 
-def main_menu_action(state):
-    """Run the player's selected main menu action."""
+def move_monster(map_state):
+    """Move the monster to a random unoccupied location."""
     while True:
-        print_shop_menu(state)
+        position = (
+            random.randint(0, 9),
+            random.randint(0, 9)
+        )
 
-        choice = input("\nEnter your choice: ").strip()
-
-        if choice == "1":
-            fight_monster(state)
-
-        elif choice == "2":
-            sleep(state)
-
-        elif choice == "3":
-            visit_shop(state)
-
-        elif choice == "4":
-            show_inventory(state)
-
-        elif choice == "5":
-            equip_weapon(state)
-
-        elif choice == "6":
-            save_game(state)
-            print("Thanks for playing!")
-            break
-
-        else:
-            print("Invalid choice. Please try again.")
-
-        if state["player_health"] <= 0:
-            break
+        if (position != map_state["player"]
+                and position != map_state["town"]):
+            map_state["monster"] = position
+            return

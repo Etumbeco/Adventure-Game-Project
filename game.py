@@ -1,60 +1,77 @@
 """
 Main Game Module
 
-This module imports gamefunctions and runs
-the adventure game.
+Runs the adventure game and connects the world map
+to the monster battles and town menu.
 """
 
 import gamefunctions
 
 
-def new_game():
-    """Create a new player and start a new game."""
-
-    state = {
-        "player_name": "Player",
-        "player_health": 30,
-        "player_gold": 1000,
-        "player_inventory": [],
-        "equipped_weapon": None
-    }
-
-    return state
-
-
 def main():
     """Run the adventure game."""
 
-    print("\n========== ADVENTURE GAME ==========")
-    print("1. Start New Game")
-    print("2. Load Previous Game")
+    character_health = 30
+    character_gold = 10
 
-    while True:
-        choice = input("\nChoose an option: ").strip()
-
-        if choice == "1":
-            state = new_game()
-            print("\nStarting a new adventure!")
-            break
-
-        elif choice == "2":
-            state = gamefunctions.load_game()
-
-            if state is not None:
-                break
-
-            print("\nPlease choose again.")
-            print("1. Start New Game")
-            print("2. Load Previous Game")
-
-        else:
-            print("Invalid choice. Please enter 1 or 2.")
+    # Create the map once and maintain its state.
+    map_state = gamefunctions.create_map()
 
     gamefunctions.print_welcome()
 
-    gamefunctions.main_menu_action(state)
+    while character_health > 0:
 
-    print("\nGame ended.")
+        gamefunctions.print_shop_menu(
+            character_health,
+            character_gold
+        )
+
+        choice = input("Enter your choice: ").strip()
+
+        if choice == "1":
+
+            # Open the world map.
+            result = gamefunctions.map_interface(map_state)
+
+            if result == "town":
+                print("You are back in town!")
+
+            elif result == "monster":
+
+                # Start monster combat.
+                character_health, character_gold = (
+                    gamefunctions.fight_monster(
+                        character_health,
+                        character_gold
+                    )
+                )
+
+                # Place a new monster after combat.
+                if character_health > 0:
+                    gamefunctions.move_monster(map_state)
+                    print("A new monster has appeared!")
+                    print("Returning to the world map...")
+
+        elif choice == "2":
+
+            character_health, character_gold = (
+                gamefunctions.sleep(
+                    character_health,
+                    character_gold
+                )
+            )
+
+        elif choice == "3":
+            print("Thanks for playing!")
+            break
+
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
+
+    if character_health <= 0:
+        print("Game over!")
+
+    print("Game ended.")
 
 
 if __name__ == "__main__":
