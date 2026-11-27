@@ -304,10 +304,10 @@ def map_interface(state, character_health, character_gold):
 
         if result == "invalid":
             continue
-        print("Player position:", state["player"])
+        
 
-       for monster in state["monsters"]:
-           print("Monster position:", (monster.x, monster.y))
+       
+           
 
         # Check player position before monsters move.
         encountered = None
@@ -344,7 +344,7 @@ def map_interface(state, character_health, character_gold):
             spawn_monsters(state, 2)
 
         # Monsters move once after each valid player move.
-        # move_monsters(state)
+        move_monsters(state)
 
         
         
