@@ -1,8 +1,8 @@
 """
 Main Game Module
 
-Runs the adventure game and connects the world map
-to the monster battles and town menu.
+Runs the adventure game and connects
+the world map, wandering monsters, and town menu.
 """
 
 import gamefunctions
@@ -14,13 +14,14 @@ def main():
     character_health = 30
     character_gold = 10
 
-    # Create the map once and maintain its state.
-    map_state = gamefunctions.create_map()
+    # Create the initial game state.
+    state = gamefunctions.create_map()
 
     gamefunctions.print_welcome()
 
     while character_health > 0:
 
+        # Display the town menu.
         gamefunctions.print_shop_menu(
             character_health,
             character_gold
@@ -30,30 +31,24 @@ def main():
 
         if choice == "1":
 
-            # Open the world map.
-            result = gamefunctions.map_interface(map_state)
+            # Explore the world map.
+            result, character_health, character_gold = (
+                gamefunctions.map_interface(
+                    state,
+                    character_health,
+                    character_gold
+                )
+            )
+
+            if result == "game_over":
+                break
 
             if result == "town":
                 print("You are back in town!")
 
-            elif result == "monster":
-
-                # Start monster combat.
-                character_health, character_gold = (
-                    gamefunctions.fight_monster(
-                        character_health,
-                        character_gold
-                    )
-                )
-
-                # Place a new monster after combat.
-                if character_health > 0:
-                    gamefunctions.move_monster(map_state)
-                    print("A new monster has appeared!")
-                    print("Returning to the world map...")
-
         elif choice == "2":
 
+            # Restore player health.
             character_health, character_gold = (
                 gamefunctions.sleep(
                     character_health,
@@ -62,11 +57,30 @@ def main():
             )
 
         elif choice == "3":
+
+            # Save the game.
+            gamefunctions.save_game(
+                state,
+                character_health,
+                character_gold
+            )
+
+        elif choice == "4":
+
+            # Load the saved game.
+            loaded_game = gamefunctions.load_game()
+
+            if loaded_game is not None:
+                state, character_health, character_gold = loaded_game
+
+        elif choice == "5":
+
             print("Thanks for playing!")
             break
 
         else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
+
+            print("Invalid choice. Please enter 1, 2, 3, 4, or 5.")
 
     if character_health <= 0:
         print("Game over!")
