@@ -342,8 +342,8 @@ def map_interface(state, character_health, character_gold):
         # Monsters move once after each valid player move.
         move_monsters(state)
 
-        # Render the updated game state.
-        draw_map(state)
+        
+        
 
         if state["player"] == state["town"] and state["left_town"]:
             print("You returned to town!")
