@@ -340,7 +340,7 @@ def map_interface(state, character_health, character_gold):
             spawn_monsters(state, 2)
 
         # Monsters move once after each valid player move.
-        move_monsters(state)
+        # move_monsters(state)
 
         
         
